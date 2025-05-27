@@ -16,6 +16,7 @@ const {
   getPendingResults,
   continueTournament,
   getPendingPlayerRequests,
+  createTournamentFromPending,
 } = require("../controllers/tournamentController");
 
 // @route   POST /api/tournaments
@@ -92,5 +93,15 @@ router.post("/:id/continue", protect, admin, continueTournament);
 // @desc    Get all pending player requests for tournaments
 // @access  Private (Admin only)
 router.get("/requests", protect, admin, getPendingPlayerRequests);
+
+// @route   POST /api/tournaments/create-from-pending
+// @desc    Admin creates a tournament from selected pending player requests
+// @access  Private (Admin only)
+router.post(
+  "/create-from-pending",
+  protect,
+  admin,
+  createTournamentFromPending
+);
 
 module.exports = router;
