@@ -487,6 +487,11 @@ class TournamentManager {
       );
       if (!response.ok) throw new Error("Failed to fetch requests");
       const requests = await response.json();
+      // DEBUG: Show the raw response in the admin dashboard
+      const debugDiv = document.getElementById("pending-requests-debug");
+      if (debugDiv) {
+        debugDiv.textContent = JSON.stringify(requests, null, 2);
+      }
       this.displayPendingRequests(requests);
     } catch (error) {
       document.getElementById(
