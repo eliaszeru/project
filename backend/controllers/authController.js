@@ -70,36 +70,16 @@ exports.register = async (req, res) => {
 // @access  Public
 exports.login = async (req, res) => {
   try {
-    const { email, password, userType } = req.body;
+    const { email, password } = req.body;
 
-    // Admin login restriction logic
-    if (userType === "admin") {
-      if (email !== ADMIN_EMAIL) {
-        return res
-          .status(403)
-          .json({ message: "ONLY AUTHORIZED PEOPLE CAN LOGIN" });
-      }
-      // Find user
-      const user = await User.findOne({ email });
-      if (!user || user.role !== "admin") {
-        return res
-          .status(403)
-          .json({ message: "ONLY AUTHORIZED PEOPLE CAN LOGIN" });
-      }
-      // Check shared password
-      const isMatch = await user.matchPassword(password);
-      if (!isMatch || password !== ADMIN_SHARED_PASSWORD) {
-        return res
-          .status(403)
-          .json({ message: "ONLY AUTHORIZED PEOPLE CAN LOGIN" });
-      }
-      // Success: return user info and token
+    // Allow admin login with just email and password
+    if (email === ADMIN_EMAIL && password === ADMIN_SHARED_PASSWORD) {
       return res.json({
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user._id),
+        _id: "admin",
+        username: "Admin",
+        email: ADMIN_EMAIL,
+        role: "admin",
+        token: generateToken("admin"),
       });
     }
 
@@ -108,20 +88,6 @@ exports.login = async (req, res) => {
 
     // Check if user exists and password matches
     if (user && (await user.matchPassword(password))) {
-      // Check if trying to login as admin but user is not an admin
-      if (userType === "admin" && user.role !== "admin") {
-        return res.status(403).json({
-          message: "This account does not have admin privileges",
-        });
-      }
-
-      // Check if trying to login as player but user is an admin
-      if (userType === "player" && user.role === "admin") {
-        return res.status(403).json({
-          message: "Admin accounts must use admin login",
-        });
-      }
-
       res.json({
         _id: user._id,
         username: user.username,
