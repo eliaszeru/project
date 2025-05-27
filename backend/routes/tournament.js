@@ -17,6 +17,9 @@ const {
   continueTournament,
   getPendingPlayerRequests,
   createTournamentFromPending,
+  joinWaitingList,
+  getWaitingList,
+  createTournamentFromWaitingList,
 } = require("../controllers/tournamentController");
 
 // @route   POST /api/tournaments
@@ -102,6 +105,27 @@ router.post(
   protect,
   admin,
   createTournamentFromPending
+);
+
+// Waiting list routes
+// @route   POST /api/waiting-list/join
+// @desc    Player joins the waiting list
+// @access  Private (User only)
+router.post("/waiting-list/join", protect, joinWaitingList);
+
+// @route   GET /api/waiting-list
+// @desc    Get all users in the waiting list
+// @access  Private (Admin only)
+router.get("/waiting-list", protect, admin, getWaitingList);
+
+// @route   POST /api/tournaments/create-from-waiting-list
+// @desc    Admin creates a tournament from waiting list
+// @access  Private (Admin only)
+router.post(
+  "/create-from-waiting-list",
+  protect,
+  admin,
+  createTournamentFromWaitingList
 );
 
 module.exports = router;

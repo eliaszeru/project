@@ -10,6 +10,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 const PendingPlayerRequest = require("../models/PendingPlayerRequest");
+const WaitingList = require("../models/WaitingList");
 
 // @desc    Create new tournament
 // @route   POST /api/tournaments
@@ -452,6 +453,95 @@ exports.createTournamentFromPending = async (req, res) => {
     }
     // Remove selected players from pending requests
     await PendingPlayerRequest.deleteMany({ user: { $in: playerIds } });
+    // Shuffle and pair players
+    const shuffled = shuffle([...playerIds]);
+    const matches = [];
+    for (let i = 0; i < shuffled.length; i += 2) {
+      if (shuffled[i + 1]) {
+        matches.push({
+          player1: shuffled[i],
+          player2: shuffled[i + 1],
+          scheduledTime: matchTime || startDate,
+        });
+      }
+    }
+    const tournament = await Tournament.create({
+      name,
+      admin: req.user._id,
+      players: playerIds,
+      bracket: matches,
+      status: "active",
+      startDate,
+      maxPlayers: playerIds.length,
+    });
+    // Send email notifications to players about their first round match
+    for (const match of matches) {
+      const [player1, player2] = await Promise.all([
+        User.findById(match.player1),
+        User.findById(match.player2),
+      ]);
+      const dateStr = new Date(match.scheduledTime).toLocaleString();
+      const subject = `Tournament Match Scheduled: ${name}`;
+      const text1 = `Hello ${player1.username},\n\nYou have a tournament match scheduled!\nOpponent: ${player2.username}\nDate & Time: ${dateStr}\n\nGood luck!`;
+      const text2 = `Hello ${player2.username},\n\nYou have a tournament match scheduled!\nOpponent: ${player1.username}\nDate & Time: ${dateStr}\n\nGood luck!`;
+      await sendEmail(player1.email, subject, text1);
+      await sendEmail(player2.email, subject, text2);
+    }
+    res.status(201).json(tournament);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// @desc    Player joins the waiting list
+// @route   POST /api/waiting-list/join
+// @access  Private
+exports.joinWaitingList = async (req, res) => {
+  try {
+    const existing = await WaitingList.findOne({ user: req.user._id });
+    if (existing) {
+      return res.status(400).json({ message: "Already in waiting list" });
+    }
+    await WaitingList.create({ user: req.user._id });
+    res.json({ message: "Added to waiting list" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// @desc    Get all users in the waiting list
+// @route   GET /api/waiting-list
+// @access  Private (Admin only)
+exports.getWaitingList = async (req, res) => {
+  try {
+    const list = await WaitingList.find().populate("user", "username email");
+    res.json(
+      list.map((r) => ({
+        _id: r.user._id,
+        username: r.user.username,
+        email: r.user.email,
+        requestedAt: r.requestedAt,
+      }))
+    );
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+// @desc    Admin creates a tournament from waiting list
+// @route   POST /api/tournaments/create-from-waiting-list
+// @access  Private (Admin only)
+exports.createTournamentFromWaitingList = async (req, res) => {
+  try {
+    const { name, playerIds, startDate, matchTime } = req.body;
+    if (!playerIds || playerIds.length < 2 || playerIds.length > 8) {
+      return res.status(400).json({ message: "Select 2, 4, or 8 players." });
+    }
+    // Remove selected players from waiting list
+    await WaitingList.deleteMany({ user: { $in: playerIds } });
     // Shuffle and pair players
     const shuffled = shuffle([...playerIds]);
     const matches = [];
