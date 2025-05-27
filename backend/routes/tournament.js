@@ -33,10 +33,10 @@ router.get("/", getTournaments);
 // @access  Public
 router.get("/:id", getTournamentById);
 
-// @route   POST /api/tournaments/:id/join
-// @desc    Join a tournament
+// @route   POST /api/tournaments/join
+// @desc    Player requests to join a tournament (global pending)
 // @access  Private (User only)
-router.post("/:id/join", protect, joinTournament);
+router.post("/join", protect, joinTournament);
 
 // @route   POST /api/matches/:id/submit
 // @desc    Submit a match result

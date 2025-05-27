@@ -9,6 +9,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
+const PendingPlayerRequest = require("../models/PendingPlayerRequest");
 
 // @desc    Create new tournament
 // @route   POST /api/tournaments
@@ -110,29 +111,19 @@ exports.getTournamentById = async (req, res) => {
   }
 };
 
-// @desc    Join tournament
-// @route   POST /api/tournaments/:id/join
+// @desc    Join tournament (global pending request)
+// @route   POST /api/tournaments/join
 // @access  Private
 exports.joinTournament = async (req, res) => {
   try {
-    const tournament = await Tournament.findById(req.params.id);
-
-    if (!tournament) {
-      return res.status(404).json({ message: "Tournament not found" });
-    }
-
-    if (
-      tournament.pendingPlayers.includes(req.user._id) ||
-      tournament.players.includes(req.user._id)
-    ) {
+    // Check if already requested
+    const existing = await PendingPlayerRequest.findOne({ user: req.user._id });
+    if (existing) {
       return res
         .status(400)
-        .json({ message: "Already requested to join this tournament" });
+        .json({ message: "Already requested to join a tournament" });
     }
-
-    tournament.pendingPlayers.push(req.user._id);
-    await tournament.save();
-
+    await PendingPlayerRequest.create({ user: req.user._id });
     res.json({
       message: "Join request submitted. Waiting for admin approval.",
     });
@@ -427,30 +418,23 @@ async function sendEmail(to, subject, text) {
   }
 }
 
-// @desc    Get all pending player requests for tournaments
+// @desc    Get all global pending player requests
 // @route   GET /api/tournaments/requests
 // @access  Private (Admin only)
 exports.getPendingPlayerRequests = async (req, res) => {
   try {
-    // Find all tournaments that are pending (not started)
-    const tournaments = await Tournament.find({ status: "pending" }).populate(
-      "pendingPlayers",
+    const requests = await PendingPlayerRequest.find().populate(
+      "user",
       "username email"
     );
-    // Flatten all pending players into a single list (with tournament info if needed)
-    const pendingRequests = [];
-    tournaments.forEach((tournament) => {
-      tournament.pendingPlayers.forEach((player) => {
-        pendingRequests.push({
-          _id: player._id,
-          username: player.username,
-          email: player.email,
-          tournamentId: tournament._id,
-          tournamentName: tournament.name,
-        });
-      });
-    });
-    res.json(pendingRequests);
+    res.json(
+      requests.map((r) => ({
+        _id: r.user._id,
+        username: r.user.username,
+        email: r.user.email,
+        requestedAt: r.requestedAt,
+      }))
+    );
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error" });
