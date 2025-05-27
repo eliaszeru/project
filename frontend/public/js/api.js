@@ -1,6 +1,6 @@
 class ApiService {
   constructor() {
-    this.API_URL = "http://localhost:5000/api";
+    this.API_URL = "https://tournament-project-668e.onrender.com/api";
   }
 
   getHeaders() {
@@ -87,7 +87,7 @@ class ApiService {
 
   // Tournament specific methods
   async getTournaments() {
-    return this.get("http://localhost:5000/api/tournaments");
+    return this.get("/tournaments");
   }
 
   async createTournament(tournamentData) {

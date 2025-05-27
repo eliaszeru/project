@@ -121,7 +121,7 @@ class TournamentManager {
     const matchTime = `${startDate}T${startTime}`;
     try {
       const response = await fetch(
-        "http://localhost:5000/api/tournaments/create",
+        "https://tournament-project-668e.onrender.com/api/tournaments/create",
         {
           method: "POST",
           headers: {
@@ -157,11 +157,14 @@ class TournamentManager {
   // Fetch and display tournaments
   async fetchAndDisplayTournaments() {
     try {
-      const response = await fetch("http://localhost:5000/api/tournaments", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await fetch(
+        "https://tournament-project-668e.onrender.com/api/tournaments",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to fetch tournaments");
@@ -358,7 +361,7 @@ class TournamentManager {
   async viewTournament(id) {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/tournaments/${id}`,
+        `https://tournament-project-668e.onrender.com/api/tournaments/${id}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -387,7 +390,7 @@ class TournamentManager {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/tournaments/${id}`,
+        `https://tournament-project-668e.onrender.com/api/tournaments/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -477,7 +480,7 @@ class TournamentManager {
   async fetchPendingRequests() {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/tournaments/requests",
+        "https://tournament-project-668e.onrender.com/api/tournaments/requests",
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
@@ -533,7 +536,7 @@ class TournamentManager {
   async fetchPendingResults() {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/tournaments/pending-results",
+        "https://tournament-project-668e.onrender.com/api/tournaments/pending-results",
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
@@ -576,7 +579,7 @@ class TournamentManager {
   async approveResult(tournamentId, matchId) {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/tournaments/${tournamentId}/approve-result`,
+        `https://tournament-project-668e.onrender.com/api/tournaments/${tournamentId}/approve-result`,
         {
           method: "POST",
           headers: {
@@ -599,7 +602,7 @@ class TournamentManager {
     if (!confirm("Are you sure you want to end this tournament?")) return;
     try {
       const response = await fetch(
-        `http://localhost:5000/api/tournaments/${tournamentId}/end`,
+        `https://tournament-project-668e.onrender.com/api/tournaments/${tournamentId}/end`,
         {
           method: "POST",
           headers: {
@@ -620,7 +623,7 @@ class TournamentManager {
   async continueTournament(tournamentId, nextRoundTime, selectedWinners) {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/tournaments/${tournamentId}/continue`,
+        `https://tournament-project-668e.onrender.com/api/tournaments/${tournamentId}/continue`,
         {
           method: "POST",
           headers: {

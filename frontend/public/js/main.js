@@ -126,11 +126,14 @@ function toggleMenu() {
 // API calls
 async function fetchTournaments() {
   try {
-    const response = await fetch("http://localhost:5000/api/tournaments", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+    const response = await fetch(
+      "https://tournament-project-668e.onrender.com/api/tournaments",
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
 
     if (!response.ok) throw new Error("Failed to fetch tournaments");
 
@@ -198,7 +201,7 @@ function displayTournaments(tournaments) {
 async function viewTournamentDetails(tournamentId) {
   try {
     const response = await fetch(
-      `http://localhost:5000/api/tournaments/${tournamentId}`,
+      `https://tournament-project-668e.onrender.com/api/tournaments/${tournamentId}`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -298,7 +301,7 @@ function displayTournamentDetails(tournament) {
 window.joinTournament = async function (tournamentId) {
   try {
     const response = await fetch(
-      `http://localhost:5000/api/tournaments/${tournamentId}/join`,
+      `https://tournament-project-668e.onrender.com/api/tournaments/${tournamentId}/join`,
       {
         method: "POST",
         headers: {

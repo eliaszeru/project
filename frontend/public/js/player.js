@@ -23,7 +23,7 @@ class PlayerDashboard {
   async loadPlayerTournaments() {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/player/tournaments",
+        "https://tournament-project-668e.onrender.com/api/player/tournaments",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -167,7 +167,7 @@ class PlayerDashboard {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/tournaments/${tournamentId}/matches/${matchId}/score`,
+        `https://tournament-project-668e.onrender.com/api/tournaments/${tournamentId}/matches/${matchId}/score`,
         {
           method: "POST",
           headers: {
@@ -188,7 +188,7 @@ class PlayerDashboard {
       await this.loadPlayerTournaments(); // Refresh the tournaments display
       // After refresh, check if still selected
       const tournaments = await fetch(
-        "http://localhost:5000/api/player/tournaments",
+        "https://tournament-project-668e.onrender.com/api/player/tournaments",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,

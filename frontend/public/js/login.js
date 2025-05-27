@@ -52,7 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Login and Registration Management
 class AuthManager {
   constructor() {
-    this.API_URL = "http://localhost:5000/api"; // Updated port to match backend
+    this.API_URL = "https://tournament-project-668e.onrender.com/api"; // Updated to Render backend URL
     this.initializeEventListeners();
     this.checkAuthState();
   }
