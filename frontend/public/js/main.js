@@ -301,7 +301,7 @@ function displayTournamentDetails(tournament) {
 window.joinTournament = async function (tournamentId) {
   try {
     const response = await fetch(
-      `https://tournament-project-668e.onrender.com/api/tournaments/${tournamentId}/join`,
+      "https://tournament-project-668e.onrender.com/api/waiting-list/join",
       {
         method: "POST",
         headers: {

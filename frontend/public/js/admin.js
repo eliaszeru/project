@@ -121,7 +121,7 @@ class TournamentManager {
     const matchTime = `${startDate}T${startTime}`;
     try {
       const response = await fetch(
-        "https://tournament-project-668e.onrender.com/api/tournaments/create-from-pending",
+        "https://tournament-project-668e.onrender.com/api/tournaments/create-from-waiting-list",
         {
           method: "POST",
           headers: {
@@ -480,7 +480,7 @@ class TournamentManager {
   async fetchPendingRequests() {
     try {
       const response = await fetch(
-        "https://tournament-project-668e.onrender.com/api/tournaments/requests",
+        "https://tournament-project-668e.onrender.com/api/waiting-list",
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
@@ -509,11 +509,11 @@ class TournamentManager {
         : requests
             .map(
               (req) => `
-      <div class="request-item">
-        <input type="checkbox" class="request-checkbox" value="${req._id}" id="req-${req._id}" />
-        <label for="req-${req._id}">${req.username} (${req.email})</label>
-      </div>
-    `
+        <div class="request-item">
+          <input type="checkbox" class="request-checkbox" value="${req._id}" id="req-${req._id}" />
+          <label for="req-${req._id}">${req.username} (${req.email})</label>
+        </div>
+      `
             )
             .join("");
     this.selectedPlayers = [];
