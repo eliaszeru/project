@@ -121,7 +121,7 @@ class TournamentManager {
     const matchTime = `${startDate}T${startTime}`;
     try {
       const response = await fetch(
-        "https://tournament-project-668e.onrender.com/api/tournaments/create",
+        "https://tournament-project-668e.onrender.com/api/tournaments/create-from-pending",
         {
           method: "POST",
           headers: {
@@ -510,14 +510,8 @@ class TournamentManager {
             .map(
               (req) => `
       <div class="request-item">
-        <input type="checkbox" class="request-checkbox" value="${
-          req._id
-        }" id="req-${req._id}" />
-        <label for="req-${req._id}">${req.username} (${req.email})${
-                req.tournamentName
-                  ? ` - <span style='color:#888'>${req.tournamentName}</span>`
-                  : ""
-              }</label>
+        <input type="checkbox" class="request-checkbox" value="${req._id}" id="req-${req._id}" />
+        <label for="req-${req._id}">${req.username} (${req.email})</label>
       </div>
     `
             )
