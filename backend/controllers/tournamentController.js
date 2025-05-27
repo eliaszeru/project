@@ -19,8 +19,26 @@ exports.createTournament = async (req, res) => {
     if (!playerIds || playerIds.length < 2 || playerIds.length > 8) {
       return res.status(400).json({ message: "Select 2, 4, or 8 players." });
     }
+    const tournament = await Tournament.findOne({ name, status: "pending" });
+    if (!tournament) {
+      return res.status(404).json({ message: "Pending tournament not found" });
+    }
+    // Only allow selected players who are in pendingPlayers
+    const validPlayerIds = playerIds.filter((pid) =>
+      tournament.pendingPlayers.map((id) => id.toString()).includes(pid)
+    );
+    if (validPlayerIds.length !== playerIds.length) {
+      return res
+        .status(400)
+        .json({
+          message: "Some selected players are not in pending requests.",
+        });
+    }
+    // Move selected players to players array
+    tournament.players = validPlayerIds;
+    tournament.pendingPlayers = [];
     // Shuffle and pair players
-    const shuffled = shuffle([...playerIds]);
+    const shuffled = shuffle([...validPlayerIds]);
     const matches = [];
     for (let i = 0; i < shuffled.length; i += 2) {
       if (shuffled[i + 1]) {
@@ -31,15 +49,11 @@ exports.createTournament = async (req, res) => {
         });
       }
     }
-    const tournament = await Tournament.create({
-      name,
-      admin: req.user._id,
-      players: playerIds,
-      bracket: matches,
-      status: "active",
-      startDate,
-      maxPlayers: playerIds.length,
-    });
+    tournament.bracket = matches;
+    tournament.status = "active";
+    tournament.startDate = startDate;
+    tournament.maxPlayers = validPlayerIds.length;
+    await tournament.save();
     // Send email notifications to players about their first round match
     for (const match of matches) {
       const [player1, player2] = await Promise.all([
@@ -109,25 +123,21 @@ exports.joinTournament = async (req, res) => {
       return res.status(404).json({ message: "Tournament not found" });
     }
 
-    if (tournament.players.length >= tournament.maxPlayers) {
-      return res.status(400).json({ message: "Tournament is full" });
-    }
-
-    if (tournament.players.includes(req.user._id)) {
+    if (
+      tournament.pendingPlayers.includes(req.user._id) ||
+      tournament.players.includes(req.user._id)
+    ) {
       return res
         .status(400)
-        .json({ message: "Already joined this tournament" });
+        .json({ message: "Already requested to join this tournament" });
     }
 
-    tournament.players.push(req.user._id);
+    tournament.pendingPlayers.push(req.user._id);
     await tournament.save();
 
-    // If we have 8 players, start the tournament
-    if (tournament.players.length === 8) {
-      await startTournament(tournament._id);
-    }
-
-    res.json(tournament);
+    res.json({
+      message: "Join request submitted. Waiting for admin approval.",
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error" });

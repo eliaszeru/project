@@ -1,8 +1,16 @@
 const mongoose = require("mongoose");
 
 const matchSchema = new mongoose.Schema({
-  player1: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  player2: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  player1: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  player2: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   scheduledTime: { type: Date, required: true },
   result: {
     score: String,
@@ -10,7 +18,11 @@ const matchSchema = new mongoose.Schema({
     approved: { type: Boolean, default: false },
     submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
-  status: { type: String, enum: ["pending", "completed", "ended"], default: "pending" },
+  status: {
+    type: String,
+    enum: ["pending", "completed", "ended"],
+    default: "pending",
+  },
 });
 
 const tournamentSchema = new mongoose.Schema({
@@ -55,6 +67,12 @@ const tournamentSchema = new mongoose.Schema({
   endedAt: {
     type: Date,
   },
+  pendingPlayers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
 });
 
 const Tournament = mongoose.model("Tournament", tournamentSchema);
