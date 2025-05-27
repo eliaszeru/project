@@ -28,11 +28,9 @@ exports.createTournament = async (req, res) => {
       tournament.pendingPlayers.map((id) => id.toString()).includes(pid)
     );
     if (validPlayerIds.length !== playerIds.length) {
-      return res
-        .status(400)
-        .json({
-          message: "Some selected players are not in pending requests.",
-        });
+      return res.status(400).json({
+        message: "Some selected players are not in pending requests.",
+      });
     }
     // Move selected players to players array
     tournament.players = validPlayerIds;
@@ -428,3 +426,33 @@ async function sendEmail(to, subject, text) {
     console.error("Error sending email:", error);
   }
 }
+
+// @desc    Get all pending player requests for tournaments
+// @route   GET /api/tournaments/requests
+// @access  Private (Admin only)
+exports.getPendingPlayerRequests = async (req, res) => {
+  try {
+    // Find all tournaments that are pending (not started)
+    const tournaments = await Tournament.find({ status: "pending" }).populate(
+      "pendingPlayers",
+      "username email"
+    );
+    // Flatten all pending players into a single list (with tournament info if needed)
+    const pendingRequests = [];
+    tournaments.forEach((tournament) => {
+      tournament.pendingPlayers.forEach((player) => {
+        pendingRequests.push({
+          _id: player._id,
+          username: player.username,
+          email: player.email,
+          tournamentId: tournament._id,
+          tournamentName: tournament.name,
+        });
+      });
+    });
+    res.json(pendingRequests);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};

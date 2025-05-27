@@ -15,6 +15,7 @@ const {
   getPlayerTournaments,
   getPendingResults,
   continueTournament,
+  getPendingPlayerRequests,
 } = require("../controllers/tournamentController");
 
 // @route   POST /api/tournaments
@@ -86,5 +87,10 @@ router.get("/pending-results", protect, admin, getPendingResults);
 // @desc    Continue tournament to next round
 // @access  Private (Admin only)
 router.post("/:id/continue", protect, admin, continueTournament);
+
+// @route   GET /api/tournaments/requests
+// @desc    Get all pending player requests for tournaments
+// @access  Private (Admin only)
+router.get("/requests", protect, admin, getPendingPlayerRequests);
 
 module.exports = router;
