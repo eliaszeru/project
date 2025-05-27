@@ -504,11 +504,17 @@ class TournamentManager {
         : requests
             .map(
               (req) => `
-        <div class="request-item">
-          <input type="checkbox" class="request-checkbox" value="${req._id}" id="req-${req._id}" />
-          <label for="req-${req._id}">${req.username} (${req.email})</label>
-        </div>
-      `
+      <div class="request-item">
+        <input type="checkbox" class="request-checkbox" value="${
+          req._id
+        }" id="req-${req._id}" />
+        <label for="req-${req._id}">${req.username} (${req.email})${
+                req.tournamentName
+                  ? ` - <span style='color:#888'>${req.tournamentName}</span>`
+                  : ""
+              }</label>
+      </div>
+    `
             )
             .join("");
     this.selectedPlayers = [];
