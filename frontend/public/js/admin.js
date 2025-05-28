@@ -481,7 +481,7 @@ class TournamentManager {
   async fetchPendingRequests() {
     try {
       const response = await fetch(
-        "https://tournament-project-668e.onrender.com/api/waiting-list",
+        "https://tournament-project-668e.onrender.com/api/tournaments/waiting-list",
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
@@ -495,9 +495,10 @@ class TournamentManager {
       }
       this.displayPendingRequests(requests);
     } catch (error) {
-      document.getElementById(
-        "pending-requests-list"
-      ).innerHTML = `<div class='error'>Failed to load requests</div>`;
+      const debugDiv = document.getElementById("pending-requests-debug");
+      if (debugDiv) {
+        debugDiv.textContent = error.message;
+      }
     }
   }
 
