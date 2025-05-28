@@ -85,26 +85,26 @@ router.get("/player/tournaments", protect, getPlayerTournaments);
 // @route   GET /api/tournaments/pending-results
 // @desc    Get all pending match results for admin approval
 // @access  Private (Admin only)
-router.get("/pending-results", protect, admin, getPendingResults);
+// router.get("/pending-results", protect, admin, getPendingResults);
 
 // @route   POST /api/tournaments/:id/continue
 // @desc    Continue tournament to next round
 // @access  Private (Admin only)
-router.post("/:id/continue", protect, admin, continueTournament);
+// router.post(":/id/continue", protect, admin, continueTournament);
 
 // @route   GET /api/tournaments/requests
 // @desc    Get all pending player requests for tournaments
 // @access  Private (Admin only)
-router.get("/requests", protect, admin, getPendingPlayerRequests);
+// router.get("/requests", protect, admin, getPendingPlayerRequests);
 
 // @route   POST /api/tournaments/create-from-pending
 // @desc    Admin creates a tournament from selected pending player requests
 // @access  Private (Admin only)
-router.post(
-  "/create-from-pending",
-  protect,
-  admin,
-  createTournamentFromPending
-);
+// router.post(
+//   "/create-from-pending",
+//   protect,
+//   admin,
+//   createTournamentFromPending
+// );
 
 module.exports = router;
