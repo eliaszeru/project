@@ -150,7 +150,13 @@ function displayTournaments(tournaments) {
   const tournamentListContainer = document.querySelector("#tournamentListView");
   if (!container) return;
 
-  // Use the homepage hero background for tournaments
+  // Always show the nav bar when viewing tournaments
+  const navbar = document.querySelector(".navbar");
+  if (navbar) navbar.style.display = "flex";
+
+  // Always show the tournament list view
+  container.style.display = "block";
+  // Ensure hero background is applied
   tournamentListContainer.classList.add("hero-bg");
   tournamentListContainer.classList.remove("tournament-bg");
 
@@ -227,6 +233,12 @@ async function viewTournamentDetails(tournamentId) {
 function displayTournamentDetails(tournament) {
   const container = document.getElementById("tournamentDetailsView");
   if (!container) return;
+
+  // Always show the nav bar when viewing tournament details
+  const navbar = document.querySelector(".navbar");
+  if (navbar) navbar.style.display = "flex";
+
+  // Ensure hero background is applied
   container.classList.add("hero-bg");
 
   // Find current round
@@ -312,6 +324,10 @@ window.joinTournament = async function (tournamentId) {
     );
     if (!response.ok) throw new Error("Failed to join tournament");
     showSuccess("Request to join tournament sent!");
+    // Redirect to tournaments page after join
+    if (typeof router !== "undefined") {
+      router.navigateTo("tournaments");
+    }
     fetchTournaments();
   } catch (error) {
     showError("Could not join tournament.");
@@ -334,4 +350,11 @@ function showSuccess(message) {
   successDiv.textContent = message;
   document.body.appendChild(successDiv);
   setTimeout(() => successDiv.remove(), 3000);
+}
+
+function showHomeView() {
+  // Always show the nav bar when viewing home
+  const navbar = document.querySelector(".navbar");
+  if (navbar) navbar.style.display = "flex";
+  document.getElementById("homeView").style.display = "block";
 }

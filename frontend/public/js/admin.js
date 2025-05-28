@@ -477,6 +477,7 @@ class TournamentManager {
         `;
   }
 
+  // Fetch and display pending player requests (waiting list)
   async fetchPendingRequests() {
     try {
       const response = await fetch(
@@ -500,6 +501,7 @@ class TournamentManager {
     }
   }
 
+  // Display pending player requests
   displayPendingRequests(requests) {
     const container = document.getElementById("pending-requests-list");
     if (!container) return;
@@ -509,11 +511,11 @@ class TournamentManager {
         : requests
             .map(
               (req) => `
-        <div class="request-item">
-          <input type="checkbox" class="request-checkbox" value="${req._id}" id="req-${req._id}" />
-          <label for="req-${req._id}">${req.username} (${req.email})</label>
-        </div>
-      `
+      <div class="request-item">
+        <input type="checkbox" class="request-checkbox" value="${req._id}" id="req-${req._id}" />
+        <label for="req-${req._id}">${req.username} (${req.email})</label>
+      </div>
+    `
             )
             .join("");
     this.selectedPlayers = [];
