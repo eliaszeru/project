@@ -17,6 +17,16 @@ const WaitingList = require("../models/WaitingList");
 // @access  Private (Admin only)
 exports.createTournament = async (req, res) => {
   try {
+    // Check for existing active tournament
+    const activeTournament = await Tournament.findOne({ status: "active" });
+    if (activeTournament) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "An active tournament already exists. Please end it before creating a new one.",
+        });
+    }
     const { name, playerIds, startDate, matchTime } = req.body;
     if (!playerIds || playerIds.length < 2 || playerIds.length > 8) {
       return res.status(400).json({ message: "Select 2, 4, or 8 players." });
@@ -184,21 +194,54 @@ exports.endTournament = async (req, res) => {
 // Player: Submit match result
 exports.submitResult = async (req, res) => {
   try {
-    const { matchId, score, winnerId } = req.body;
+    const { matchId, outcome, score } = req.body;
     const tournament = await Tournament.findById(req.params.id);
     if (!tournament)
       return res.status(404).json({ message: "Tournament not found" });
     const match = tournament.bracket.id(matchId);
     if (!match) return res.status(404).json({ message: "Match not found" });
-    match.result = {
-      score,
-      winner: winnerId,
-      approved: false,
-      submittedBy: req.user._id,
-    };
-    match.status = "pending";
+    // Determine if user is player1 or player2
+    const isPlayer1 = match.player1.toString() === req.user._id.toString();
+    const isPlayer2 = match.player2.toString() === req.user._id.toString();
+    if (!isPlayer1 && !isPlayer2) {
+      return res
+        .status(403)
+        .json({ message: "Not authorized to submit result for this match" });
+    }
+    // Update match with result
+    if (isPlayer1) {
+      match.player1Result = outcome;
+      match.player1Score = score;
+      match.player1Submitted = true;
+    } else {
+      match.player2Result = outcome;
+      match.player2Score = score;
+      match.player2Submitted = true;
+    }
     await tournament.save();
-    res.json({ message: "Result submitted, waiting for admin approval." });
+    // If both players submitted and results match, auto-approve
+    if (match.player1Submitted && match.player2Submitted) {
+      if (
+        (match.player1Result === "win" && match.player2Result === "lose") ||
+        (match.player1Result === "lose" && match.player2Result === "win")
+      ) {
+        match.winner = isPlayer1 ? match.player1 : match.player2;
+        match.status = "completed";
+        match.result = {
+          score,
+          winner: match.winner,
+          approved: true,
+          submittedBy: req.user._id,
+        };
+        await tournament.save();
+        return res.json({ message: "Result auto-approved.", match });
+      }
+    }
+    await tournament.save();
+    res.json({
+      message: "Result submitted, waiting for admin approval.",
+      match,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error" });
@@ -527,13 +570,11 @@ exports.getWaitingList = async (req, res) => {
     );
   } catch (error) {
     console.error("getWaitingList error:", error);
-    res
-      .status(500)
-      .json({
-        message: "Server Error",
-        error: error.message,
-        stack: error.stack,
-      });
+    res.status(500).json({
+      message: "Server Error",
+      error: error.message,
+      stack: error.stack,
+    });
   }
 };
 

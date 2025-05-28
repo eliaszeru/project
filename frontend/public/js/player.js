@@ -223,3 +223,40 @@ class PlayerDashboard {
 
 // Initialize player dashboard
 const playerDashboard = new PlayerDashboard();
+
+function renderSubmitResultForm(match) {
+  const form = document.createElement("form");
+  form.className = "submit-result-form";
+  form.innerHTML = `
+    <label>Match Result:</label><br>
+    <input type="radio" name="outcome" value="win" required> I won<br>
+    <input type="radio" name="outcome" value="lose" required> I lost<br>
+    <label>Score:</label>
+    <input type="text" name="score" placeholder="e.g. 1-0" required><br>
+    <button type="submit">Submit Result</button>
+  `;
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const outcome = form.elements["outcome"].value;
+    const score = form.elements["score"].value;
+    try {
+      const response = await fetch(
+        `https://tournament-project-668e.onrender.com/api/tournaments/${match.tournamentId}/submit-result`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ matchId: match._id, outcome, score }),
+        }
+      );
+      if (!response.ok) throw new Error("Failed to submit result");
+      showSuccess("Result submitted!");
+      // Optionally refresh the dashboard
+    } catch (error) {
+      showError("Could not submit result.");
+    }
+  };
+  return form;
+}
