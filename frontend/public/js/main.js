@@ -313,7 +313,7 @@ function displayTournamentDetails(tournament) {
 window.joinTournament = async function (tournamentId) {
   try {
     const response = await fetch(
-      "https://tournament-project-668e.onrender.com/api/tournaments/waiting-list/join",
+      `https://tournament-project-668e.onrender.com/api/tournaments/${tournamentId}/join`,
       {
         method: "POST",
         headers: {
@@ -322,15 +322,14 @@ window.joinTournament = async function (tournamentId) {
         },
       }
     );
-    if (!response.ok) throw new Error("Failed to join tournament");
-    showSuccess("Request to join tournament sent!");
-    // Redirect to tournaments page after join
-    if (typeof router !== "undefined") {
-      router.navigateTo("tournaments");
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || "Failed to join tournament");
     }
+    showSuccess("Joined tournament!");
     fetchTournaments();
   } catch (error) {
-    showError("Could not join tournament.");
+    showError(error.message || "Could not join tournament.");
   }
 };
 
