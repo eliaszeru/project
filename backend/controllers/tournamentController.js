@@ -423,3 +423,45 @@ async function sendEmail(to, subject, text) {
     console.error("Error sending email:", error);
   }
 }
+
+// @desc    Get all pending/conflicting match results for admin approval
+// @route   GET /api/tournaments/pending-results
+// @access  Private (Admin only)
+exports.getPendingResults = async (req, res) => {
+  try {
+    // Find all active tournaments
+    const tournaments = await Tournament.find({ status: "active" })
+      .populate("players", "username email")
+      .populate("bracket.player1 bracket.player2", "username email");
+    let pendingResults = [];
+    tournaments.forEach((tournament) => {
+      (tournament.bracket || []).forEach((match) => {
+        // Both players submitted, but results do not match (conflict)
+        if (
+          match.player1Submitted &&
+          match.player2Submitted &&
+          match.player1Result &&
+          match.player2Result &&
+          match.player1Result === match.player2Result // both say win or both say lose
+        ) {
+          pendingResults.push({
+            tournamentId: tournament._id,
+            tournamentName: tournament.name,
+            matchId: match._id,
+            player1: match.player1,
+            player2: match.player2,
+            player1Result: match.player1Result,
+            player2Result: match.player2Result,
+            player1Score: match.player1Score,
+            player2Score: match.player2Score,
+            round: match.round,
+          });
+        }
+      });
+    });
+    res.json(pendingResults);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};

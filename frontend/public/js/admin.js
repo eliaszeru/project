@@ -5,42 +5,30 @@ class TournamentManager {
     this.MAX_PLAYERS = 8;
     this.MIN_PLAYERS = 2;
     this.initializeEventListeners();
+    this.fetchAndDisplayPendingResults();
   }
 
   initializeEventListeners() {
-    // Form elements
     const form = document.getElementById("tournamentForm");
-    const playerEmail = document.getElementById("playerEmail");
-    const addPlayerBtn = document.getElementById("addPlayerBtn");
-    const playerList = document.getElementById("player-list");
     const createBtn = document.getElementById("createTournamentBtn");
-
     if (form) {
       form.addEventListener("submit", (e) => this.handleTournamentSubmit(e));
-    }
-
-    if (addPlayerBtn) {
-      addPlayerBtn.addEventListener("click", () => this.addPlayer());
-    }
-
-    // Listen for player selection changes
-    document
-      .getElementById("pending-requests-list")
-      ?.addEventListener("change", (e) => {
-        if (e.target.classList.contains("request-checkbox")) {
-          this.togglePlayerSelection(e.target.value, e.target.checked);
-        }
+      form.addEventListener("input", () => {
+        const name = document.getElementById("tournamentName").value;
+        const date = document.getElementById("startDate").value;
+        const time = document.getElementById("startTime").value;
+        const limit = document.getElementById("playerLimit").value;
+        createBtn.disabled = !(
+          name &&
+          date &&
+          time &&
+          ["2", "4", "8"].includes(limit)
+        );
       });
-    // Validate player count on every change
-    form?.addEventListener("change", () => this.validatePlayerCount());
-
-    // Initialize tournament list if we're on the admin view
+    }
     if (document.getElementById("adminView")) {
       this.fetchAndDisplayTournaments();
     }
-
-    this.fetchPendingRequests();
-    this.fetchPendingResults();
   }
 
   // Email validation helper
@@ -110,18 +98,24 @@ class TournamentManager {
     const tournamentName = document.getElementById("tournamentName").value;
     const startDate = document.getElementById("startDate").value;
     const startTime = document.getElementById("startTime").value;
-    if (!tournamentName || !startDate || !startTime) {
-      showError("Please fill in all required fields.");
+    const playerLimit = parseInt(
+      document.getElementById("playerLimit").value,
+      10
+    );
+    if (
+      !tournamentName ||
+      !startDate ||
+      !startTime ||
+      ![2, 4, 8].includes(playerLimit)
+    ) {
+      showError(
+        "Please fill in all required fields and select a valid player limit."
+      );
       return;
     }
-    if (![2, 4, 8].includes(this.selectedPlayers.length)) {
-      showError("Select 2, 4, or 8 players.");
-      return;
-    }
-    const matchTime = `${startDate}T${startTime}`;
     try {
       const response = await fetch(
-        "https://tournament-project-668e.onrender.com/api/tournaments/create-from-waiting-list",
+        "https://tournament-project-668e.onrender.com/api/tournaments",
         {
           method: "POST",
           headers: {
@@ -130,17 +124,15 @@ class TournamentManager {
           },
           body: JSON.stringify({
             name: tournamentName,
-            playerIds: this.selectedPlayers,
             startDate,
-            matchTime,
+            matchTime: `${startDate}T${startTime}`,
+            maxPlayers: playerLimit,
           }),
         }
       );
       if (!response.ok) throw new Error("Failed to create tournament");
       showSuccess("Tournament created successfully!");
-      this.selectedPlayers = [];
       document.getElementById("tournamentForm").reset();
-      this.fetchPendingRequests();
       this.fetchAndDisplayTournaments();
     } catch (error) {
       showError("Failed to create tournament. Please try again.");
@@ -477,135 +469,6 @@ class TournamentManager {
         `;
   }
 
-  // Fetch and display pending player requests (waiting list)
-  async fetchPendingRequests() {
-    try {
-      const response = await fetch(
-        "https://tournament-project-668e.onrender.com/api/tournaments/waiting-list",
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
-      if (!response.ok) throw new Error("Failed to fetch requests");
-      const requests = await response.json();
-      // DEBUG: Show the raw response in the admin dashboard
-      const debugDiv = document.getElementById("pending-requests-debug");
-      if (debugDiv) {
-        debugDiv.textContent = JSON.stringify(requests, null, 2);
-      }
-      this.displayPendingRequests(requests);
-    } catch (error) {
-      const debugDiv = document.getElementById("pending-requests-debug");
-      if (debugDiv) {
-        debugDiv.textContent = error.message;
-      }
-    }
-  }
-
-  // Display pending player requests
-  displayPendingRequests(requests) {
-    const container = document.getElementById("pending-requests-list");
-    if (!container) return;
-    container.innerHTML =
-      requests.length === 0
-        ? `<div class='empty'>No pending player requests.</div>`
-        : requests
-            .map(
-              (req) => `
-      <div class="request-item">
-        <input type="checkbox" class="request-checkbox" value="${req._id}" id="req-${req._id}" />
-        <label for="req-${req._id}">${req.username} (${req.email})</label>
-      </div>
-    `
-            )
-            .join("");
-    this.selectedPlayers = [];
-    this.validatePlayerCount();
-  }
-
-  togglePlayerSelection(playerId, checked) {
-    if (checked) {
-      if (!this.selectedPlayers.includes(playerId))
-        this.selectedPlayers.push(playerId);
-    } else {
-      this.selectedPlayers = this.selectedPlayers.filter(
-        (id) => id !== playerId
-      );
-    }
-    this.validatePlayerCount();
-  }
-
-  validatePlayerCount() {
-    const createBtn = document.getElementById("createTournamentBtn");
-    const count = this.selectedPlayers.length;
-    createBtn.disabled = ![2, 4, 8].includes(count);
-  }
-
-  async fetchPendingResults() {
-    try {
-      const response = await fetch(
-        "https://tournament-project-668e.onrender.com/api/tournaments/pending-results",
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
-      if (!response.ok) throw new Error("Failed to fetch pending results");
-      const results = await response.json();
-      this.displayPendingResults(results);
-    } catch (error) {
-      document.getElementById(
-        "pending-results-list"
-      ).innerHTML = `<div class='error'>Failed to load pending results</div>`;
-    }
-  }
-
-  displayPendingResults(results) {
-    const container = document.getElementById("pending-results-list");
-    if (!container) return;
-    if (!results.length) {
-      container.innerHTML = `<div class='empty'>No pending match results.</div>`;
-      return;
-    }
-    container.innerHTML = results
-      .map(
-        (result) => `
-      <div class="pending-result-item">
-        <div class="pending-result-info">
-          <strong>${result.tournamentName}</strong><br/>
-          ${result.player1Name} vs ${result.player2Name}<br/>
-          <span>Score: ${result.score}</span>
-        </div>
-        <div class="pending-result-actions">
-          <button onclick="tournamentManager.approveResult('${result.tournamentId}', '${result.matchId}')">Approve</button>
-        </div>
-      </div>
-    `
-      )
-      .join("");
-  }
-
-  async approveResult(tournamentId, matchId) {
-    try {
-      const response = await fetch(
-        `https://tournament-project-668e.onrender.com/api/tournaments/${tournamentId}/approve-result`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ matchId }),
-        }
-      );
-      if (!response.ok) throw new Error("Failed to approve result");
-      showSuccess("Result approved!");
-      this.fetchPendingResults();
-      this.fetchAndDisplayTournaments();
-    } catch (error) {
-      showError("Failed to approve result. Please try again.");
-    }
-  }
-
   async endTournament(tournamentId) {
     if (!confirm("Are you sure you want to end this tournament?")) return;
     try {
@@ -621,8 +484,6 @@ class TournamentManager {
       if (!response.ok) throw new Error("Failed to end tournament");
       showSuccess("Tournament ended successfully.");
       this.fetchAndDisplayTournaments();
-      this.fetchPendingRequests();
-      this.fetchPendingResults();
     } catch (error) {
       showError("Failed to end tournament. Please try again.");
     }
@@ -644,10 +505,86 @@ class TournamentManager {
       if (!response.ok) throw new Error("Failed to continue tournament");
       showSuccess("Next round scheduled!");
       this.fetchAndDisplayTournaments();
-      this.fetchPendingRequests();
-      this.fetchPendingResults();
     } catch (error) {
       showError("Failed to continue tournament. Please try again.");
+    }
+  }
+
+  async fetchAndDisplayPendingResults() {
+    const pendingList = document.getElementById("pending-results-list");
+    if (!pendingList) return;
+    pendingList.innerHTML = '<div class="loading">Loading...</div>';
+    try {
+      const response = await fetch(
+        "https://tournament-project-668e.onrender.com/api/tournaments/pending-results",
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      if (!response.ok) throw new Error("Failed to fetch pending results");
+      const results = await response.json();
+      if (!results.length) {
+        pendingList.innerHTML =
+          '<div class="empty">No pending/conflicting results.</div>';
+        return;
+      }
+      pendingList.innerHTML = results
+        .map(
+          (r) => `
+          <div class="pending-result-item">
+            <div class="pending-result-info">
+              <b>${r.tournamentName}</b> (Round ${r.round})<br>
+              <span>${r.player1.username || r.player1.email}:</span> <b>${
+            r.player1Result
+          }</b> (${r.player1Score || "-"})<br>
+              <span>${r.player2.username || r.player2.email}:</span> <b>${
+            r.player2Result
+          }</b> (${r.player2Score || "-"})
+            </div>
+            <div class="pending-result-actions">
+              <button onclick="tournamentManager.resolveResult('${
+                r.tournamentId
+              }','${r.matchId}','${r.player1._id}')">Approve ${
+            r.player1.username || r.player1.email
+          }</button>
+              <button onclick="tournamentManager.resolveResult('${
+                r.tournamentId
+              }','${r.matchId}','${r.player2._id}')">Approve ${
+            r.player2.username || r.player2.email
+          }</button>
+            </div>
+          </div>
+        `
+        )
+        .join("");
+    } catch (error) {
+      pendingList.innerHTML =
+        '<div class="empty">Failed to load pending results.</div>';
+    }
+  }
+
+  async resolveResult(tournamentId, matchId, winnerId) {
+    if (!confirm("Are you sure you want to approve this winner?")) return;
+    try {
+      const response = await fetch(
+        `https://tournament-project-668e.onrender.com/api/tournaments/${tournamentId}/approve-result`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ matchId, winnerId }),
+        }
+      );
+      if (!response.ok) throw new Error("Failed to approve result");
+      showSuccess("Result approved.");
+      this.fetchAndDisplayPendingResults();
+      this.fetchAndDisplayTournaments();
+    } catch (error) {
+      showError("Failed to approve result. Please try again.");
     }
   }
 }

@@ -85,7 +85,7 @@ router.get("/player/tournaments", protect, getPlayerTournaments);
 // @route   GET /api/tournaments/pending-results
 // @desc    Get all pending match results for admin approval
 // @access  Private (Admin only)
-// router.get("/pending-results", protect, admin, getPendingResults);
+router.get("/pending-results", protect, admin, getPendingResults);
 
 // @route   POST /api/tournaments/:id/continue
 // @desc    Continue tournament to next round

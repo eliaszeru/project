@@ -303,12 +303,16 @@
                 <label for="startTime">Start Time</label>
                 <input type="time" id="startTime" required />
               </div>
-              <button
-                type="submit"
-                class="submit-btn"
-                id="createTournamentBtn"
-                disabled
-              >
+              <div class="form-group">
+                <label for="playerLimit">Player Limit</label>
+                <select id="playerLimit" required>
+                  <option value="">Select</option>
+                  <option value="2">2</option>
+                  <option value="4">4</option>
+                  <option value="8">8</option>
+                </select>
+              </div>
+              <button type="submit" class="submit-btn" id="createTournamentBtn">
                 Create Tournament
               </button>
             </form>
