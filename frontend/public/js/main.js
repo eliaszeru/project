@@ -234,6 +234,25 @@ function displayTournamentDetails(tournament) {
   const container = document.getElementById("tournamentDetailsView");
   if (!container) return;
 
+  // DEBUG: Show raw tournament data at the top of the page
+  let debugBox = document.getElementById("debug-tournament-raw");
+  if (!debugBox) {
+    debugBox = document.createElement("pre");
+    debugBox.id = "debug-tournament-raw";
+    debugBox.style.background = "#222";
+    debugBox.style.color = "#fff";
+    debugBox.style.padding = "1rem";
+    debugBox.style.margin = "1rem 0";
+    debugBox.style.overflow = "auto";
+    debugBox.style.maxHeight = "300px";
+    debugBox.style.fontSize = "0.9rem";
+    debugBox.style.border = "2px solid #f39c12";
+    debugBox.style.zIndex = 9999;
+    container.parentElement.insertBefore(debugBox, container);
+  }
+  debugBox.textContent =
+    "RAW TOURNAMENT DATA:\n" + JSON.stringify(tournament, null, 2);
+
   // Always show the nav bar when viewing tournament details
   const navbar = document.querySelector(".navbar");
   if (navbar) navbar.style.display = "flex";

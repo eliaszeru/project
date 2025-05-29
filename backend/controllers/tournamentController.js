@@ -425,20 +425,19 @@ async function sendEmail(to, subject, text) {
 // @access  Private (Admin only)
 exports.getPendingResults = async (req, res) => {
   try {
-    // Find all active tournaments
     const tournaments = await Tournament.find({ status: "active" })
       .populate("players", "username email")
       .populate("bracket.player1 bracket.player2", "username email");
     let pendingResults = [];
     tournaments.forEach((tournament) => {
-      (tournament.bracket || []).forEach((match) => {
-        // Both players submitted, but results do not match (conflict)
+      if (!Array.isArray(tournament.bracket)) return;
+      tournament.bracket.forEach((match) => {
         if (
           match.player1Submitted &&
           match.player2Submitted &&
           match.player1Result &&
           match.player2Result &&
-          match.player1Result === match.player2Result // both say win or both say lose
+          match.player1Result === match.player2Result
         ) {
           pendingResults.push({
             tournamentId: tournament._id,
@@ -458,6 +457,6 @@ exports.getPendingResults = async (req, res) => {
     res.json(pendingResults);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Server Error" });
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
