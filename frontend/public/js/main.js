@@ -241,11 +241,6 @@ function displayTournamentDetails(tournament) {
   // Ensure hero background is applied
   container.classList.add("hero-bg");
 
-  // Find current round
-  const currentRound = tournament.currentRound || 1;
-  const matches = tournament.bracket || [];
-  const currentMatches = matches.filter((m) => m.round === currentRound);
-
   // Helper to get player name/email
   function getPlayerName(player) {
     if (!player) return "Unknown";
@@ -255,38 +250,50 @@ function displayTournamentDetails(tournament) {
     return player;
   }
 
-  let matchesHtml = "";
-  if (currentMatches.length > 0) {
-    matchesHtml = `
-      <div class="bracket-section">
-        <h3>Round ${currentRound} Matches</h3>
-        <div class="bracket-list">
-          ${currentMatches
-            .map((match, idx) => {
-              const player1 = getPlayerName(match.player1);
-              const player2 = getPlayerName(match.player2);
-              const dateStr = match.scheduledTime
-                ? new Date(match.scheduledTime).toLocaleString()
-                : "TBD";
-              let result = "";
-              if (match.result && match.result.winner) {
-                const winner = getPlayerName(match.result.winner);
-                result = `<span class='match-winner'>(Winner: ${winner})</span>`;
-              }
-              return `
-                  <div class="bracket-match">
-                    <span class="match-pair">${player1} <b>vs</b> ${player2}</span>
-                    <span class="match-date">${dateStr}</span>
-                    ${result}
-                  </div>
-                `;
-            })
-            .join("")}
-        </div>
-      </div>
-    `;
-  } else {
-    matchesHtml = `<div class='tournament-empty-message'><h3>No matches scheduled for this round yet.</h3></div>`;
+  // Group matches by round
+  const matches = tournament.bracket || [];
+  const rounds = {};
+  matches.forEach((match) => {
+    const round = match.round || 1;
+    if (!rounds[round]) rounds[round] = [];
+    rounds[round].push(match);
+  });
+
+  let bracketHtml = "";
+  Object.keys(rounds)
+    .sort((a, b) => a - b)
+    .forEach((round) => {
+      bracketHtml += `<div class='bracket-section'><h3>Round ${round}</h3><div class='bracket-list'>`;
+      bracketHtml += rounds[round]
+        .map((match) => {
+          const player1 = getPlayerName(match.player1);
+          const player2 = getPlayerName(match.player2);
+          const dateStr = match.scheduledTime
+            ? new Date(match.scheduledTime).toLocaleString()
+            : "TBD";
+          let result = "";
+          if (match.result && match.result.winner) {
+            const winner = getPlayerName(match.result.winner);
+            result = `<span class='match-winner'>(Winner: ${winner})</span>`;
+          }
+          return `<div class='bracket-match'><span class='match-pair'>${player1} <b>vs</b> ${player2}</span><span class='match-date'>${dateStr}</span>${result}</div>`;
+        })
+        .join("");
+      bracketHtml += "</div></div>";
+    });
+
+  // Champion display
+  let championHtml = "";
+  if (tournament.status === "ended" && tournament.bracket) {
+    // Find the last match with a winner
+    const lastMatch = tournament.bracket
+      .slice()
+      .reverse()
+      .find((m) => m.result && m.result.winner);
+    if (lastMatch) {
+      const champion = getPlayerName(lastMatch.result.winner);
+      championHtml = `<div class='champion-message'><h2>Champion: ${champion}</h2></div>`;
+    }
   }
 
   container.innerHTML = `
@@ -300,11 +307,12 @@ function displayTournamentDetails(tournament) {
         <h3>Players</h3>
         <ul>
           ${tournament.players
-            .map((player) => `<li>${player.email} - ${player.status}</li>`)
+            .map((player) => `<li>${player.email}</li>`)
             .join("")}
         </ul>
       </div>
-      ${matchesHtml}
+      ${championHtml}
+      ${bracketHtml}
     </div>
   `;
 }

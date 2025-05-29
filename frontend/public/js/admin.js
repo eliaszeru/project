@@ -408,65 +408,87 @@ class TournamentManager {
     const container = document.getElementById("tournamentDetailsView");
     if (!container) return;
 
+    // Helper to get player name/email
+    function getPlayerName(player) {
+      if (!player) return "Unknown";
+      if (typeof player === "object")
+        return player.username || player.email || "Unknown";
+      return player;
+    }
+
+    // Group matches by round
+    const matches = tournament.bracket || [];
+    const rounds = {};
+    matches.forEach((match) => {
+      const round = match.round || 1;
+      if (!rounds[round]) rounds[round] = [];
+      rounds[round].push(match);
+    });
+
+    let bracketHtml = "";
+    Object.keys(rounds)
+      .sort((a, b) => a - b)
+      .forEach((round) => {
+        bracketHtml += `<div class='bracket-section'><h3>Round ${round}</h3><div class='bracket-list'>`;
+        bracketHtml += rounds[round]
+          .map((match) => {
+            const player1 = getPlayerName(match.player1);
+            const player2 = getPlayerName(match.player2);
+            const dateStr = match.scheduledTime
+              ? new Date(match.scheduledTime).toLocaleString()
+              : "TBD";
+            let result = "";
+            if (match.result && match.result.winner) {
+              const winner = getPlayerName(match.result.winner);
+              result = `<span class='match-winner'>(Winner: ${winner})</span>`;
+            }
+            return `<div class='bracket-match'><span class='match-pair'>${player1} <b>vs</b> ${player2}</span><span class='match-date'>${dateStr}</span>${result}</div>`;
+          })
+          .join("");
+        bracketHtml += "</div></div>";
+      });
+
+    // Champion display
+    let championHtml = "";
+    if (tournament.status === "ended" && tournament.bracket) {
+      // Find the last match with a winner
+      const lastMatch = tournament.bracket
+        .slice()
+        .reverse()
+        .find((m) => m.result && m.result.winner);
+      if (lastMatch) {
+        const champion = getPlayerName(lastMatch.result.winner);
+        championHtml = `<div class='champion-message'><h2>Champion: ${champion}</h2></div>`;
+      }
+    }
+
     container.innerHTML = `
-            <div class="tournament-details">
-                <h2>${tournament.name}</h2>
-                <div class="tournament-info">
-                    <p><strong>Start Date:</strong> ${new Date(
-                      tournament.startDate
-                    ).toLocaleDateString()}</p>
-                    <p><strong>Status:</strong> ${tournament.status}</p>
-                </div>
-                <div class="players-section">
-                    <h3>Players</h3>
-                    <div class="players-grid">
-                        ${tournament.players
-                          .map(
-                            (player) => `
-                            <div class="player-card">
-                                <div class="player-email">${player.email}</div>
-                                <div class="player-status ${player.status.toLowerCase()}">${
-                              player.status
-                            }</div>
-                            </div>
-                        `
-                          )
-                          .join("")}
-                    </div>
-                </div>
-                ${
-                  tournament.matches
-                    ? `
-                    <div class="matches-section">
-                        <h3>Matches</h3>
-                        <div class="matches-grid">
-                            ${tournament.matches
-                              .map(
-                                (match) => `
-                                <div class="match-card">
-                                    <div class="match-players">
-                                        <span>${match.player1}</span>
-                                        <span>vs</span>
-                                        <span>${match.player2}</span>
-                                    </div>
-                                    <div class="match-score">
-                                        ${
-                                          match.score
-                                            ? `${match.score.player1} - ${match.score.player2}`
-                                            : "Pending"
-                                        }
-                                    </div>
-                                </div>
-                            `
-                              )
-                              .join("")}
-                        </div>
-                    </div>
+      <div class="tournament-details">
+        <h2>${tournament.name}</h2>
+        <div class="tournament-info">
+          <p><strong>Start Date:</strong> ${new Date(
+            tournament.startDate
+          ).toLocaleDateString()}</p>
+          <p><strong>Status:</strong> ${tournament.status}</p>
+        </div>
+        <div class="players-section">
+          <h3>Players</h3>
+          <div class="players-grid">
+            ${tournament.players
+              .map(
+                (player) => `
+                  <div class="player-card">
+                    <div class="player-email">${player.email}</div>
+                  </div>
                 `
-                    : ""
-                }
-            </div>
-        `;
+              )
+              .join("")}
+          </div>
+        </div>
+        ${championHtml}
+        ${bracketHtml}
+      </div>
+    `;
   }
 
   async endTournament(tournamentId) {

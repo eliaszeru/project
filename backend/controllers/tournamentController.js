@@ -23,9 +23,16 @@ exports.createTournament = async (req, res) => {
           "An active tournament already exists. Please end it before creating a new one.",
       });
     }
-    const { name, playerIds, startDate, matchTime } = req.body;
-    if (!playerIds || playerIds.length < 2 || playerIds.length > 8) {
-      return res.status(400).json({ message: "Select 2, 4, or 8 players." });
+    const { name, playerIds, startDate, matchTime, maxPlayers } = req.body;
+    if (![2, 4, 8].includes(Number(maxPlayers))) {
+      return res
+        .status(400)
+        .json({ message: "Player limit must be 2, 4, or 8" });
+    }
+    if (!playerIds || playerIds.length < 2 || playerIds.length > maxPlayers) {
+      return res
+        .status(400)
+        .json({ message: `Select between 2 and ${maxPlayers} players.` });
     }
     const tournament = await Tournament.findOne({ name, status: "pending" });
     if (!tournament) {
@@ -58,7 +65,7 @@ exports.createTournament = async (req, res) => {
     tournament.bracket = matches;
     tournament.status = "active";
     tournament.startDate = startDate;
-    tournament.maxPlayers = validPlayerIds.length;
+    tournament.maxPlayers = maxPlayers;
     await tournament.save();
     // Send email notifications to players about their first round match
     for (const match of matches) {
@@ -118,19 +125,20 @@ exports.getTournamentById = async (req, res) => {
   }
 };
 
-// @desc    Join tournament (global pending request)
+// @desc    Join tournament (simple join, no pending)
 // @route   POST /api/tournaments/join
 // @access  Private
 exports.joinTournament = async (req, res) => {
   try {
-    const tournament = await Tournament.findById(req.params.id);
+    const { tournamentId } = req.body;
+    const tournament = await Tournament.findById(tournamentId);
     if (!tournament) {
       return res.status(404).json({ message: "Tournament not found" });
     }
-    if (tournament.status !== "pending") {
+    if (![2, 4, 8].includes(Number(tournament.maxPlayers))) {
       return res
         .status(400)
-        .json({ message: "Tournament is not open for joining" });
+        .json({ message: "Tournament player limit must be 2, 4, or 8" });
     }
     if (tournament.players.length >= tournament.maxPlayers) {
       return res.status(400).json({ message: "Tournament is full" });
@@ -141,25 +149,8 @@ exports.joinTournament = async (req, res) => {
         .json({ message: "You have already joined this tournament" });
     }
     tournament.players.push(req.user._id);
-    // If full, start tournament and create matches
-    if (tournament.players.length === tournament.maxPlayers) {
-      tournament.status = "active";
-      // Shuffle and pair players
-      const shuffled = shuffle([...tournament.players]);
-      const matches = [];
-      for (let i = 0; i < shuffled.length; i += 2) {
-        if (shuffled[i + 1]) {
-          matches.push({
-            player1: shuffled[i],
-            player2: shuffled[i + 1],
-            scheduledTime: tournament.startDate,
-          });
-        }
-      }
-      tournament.bracket = matches;
-    }
     await tournament.save();
-    res.json({ message: "Joined tournament" });
+    res.json({ message: "Joined tournament", tournament });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error" });
@@ -273,16 +264,21 @@ exports.submitResult = async (req, res) => {
 // Admin: Approve match result
 exports.approveResult = async (req, res) => {
   try {
-    const { matchId } = req.body;
+    const { matchId, winnerId } = req.body;
     const tournament = await Tournament.findById(req.params.id);
     if (!tournament)
       return res.status(404).json({ message: "Tournament not found" });
     const match = tournament.bracket.id(matchId);
     if (!match) return res.status(404).json({ message: "Match not found" });
+    if (!winnerId)
+      return res.status(400).json({ message: "WinnerId required" });
+    match.result = match.result || {};
+    match.result.winner = winnerId;
     match.result.approved = true;
     match.status = "completed";
+    match.winner = winnerId;
     await tournament.save();
-    res.json({ message: "Result approved." });
+    res.json({ message: "Result approved.", match });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server Error" });
