@@ -437,7 +437,7 @@ exports.getPendingResults = async (req, res) => {
           match.player2Submitted &&
           match.player1Result &&
           match.player2Result &&
-          match.player1Result === match.player2Result
+          match.player1Result !== match.player2Result // Only if results conflict
         ) {
           pendingResults.push({
             tournamentId: tournament._id,
