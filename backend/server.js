@@ -20,7 +20,16 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://project1-cik7.onrender.com", // Frontend production URL
+      "http://localhost:3000", // Local development
+      "http://localhost:5173", // Vite or other local dev
+    ],
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Use API prefix from environment or default to '/api'
